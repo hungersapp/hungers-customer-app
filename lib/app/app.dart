@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import 'app_theme.dart';
+import 'app_pages.dart';
+import 'app_routes.dart';
 
 class HungersApp extends StatelessWidget {
   const HungersApp({super.key});
@@ -11,23 +13,14 @@ class HungersApp extends StatelessWidget {
       title: 'HUNGERS',
       debugShowCheckedModeBanner: false,
 
-      // ==========================================================
-      // THEME
-      // ==========================================================
+      // Theme
       theme: AppTheme.lightTheme,
 
-      // ==========================================================
-      // HOME
-      // (Temporary - Splash Screen வரும் வரை)
-      // ==========================================================
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            '❤️ HUNGERS ❤️\nFeeding Smiles. Happy Hearts.',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
+      // Initial Route
+      initialRoute: AppRoutes.splash,
+
+      // Application Routes
+      routes: AppPages.routes,
     );
   }
 }
