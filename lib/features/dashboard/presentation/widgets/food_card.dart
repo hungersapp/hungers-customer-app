@@ -121,7 +121,7 @@ class FoodCard extends StatelessWidget {
                 ],
               ),
 
-              Expanded(
+              Flexible(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -170,7 +170,7 @@ class FoodCard extends StatelessWidget {
                         style: theme.textTheme.bodySmall,
                       ),
 
-                      const Spacer(),
+                      const SizedBox(height: 8),
 
                       Row(
                         children: [
@@ -223,7 +223,7 @@ class FoodCard extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
 
                       SizedBox(
                         width: double.infinity,
