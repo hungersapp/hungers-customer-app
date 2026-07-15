@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "828204012737",
+    "project_id": "hungers-577f4",
+    "storage_bucket": "hungers-577f4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:828204012737:android:f33cf949c5210a988c3040",
+        "android_client_info": {
+          "package_name": "com.hungers.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7LWmz0J74TIjZv_rtlLWRdfJgi-O9BqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

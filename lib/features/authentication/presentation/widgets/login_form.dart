@@ -1,167 +1,222 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-class LoginForm extends StatefulWidget {
-  const LoginForm({super.key});
+class LoginForm extends StatelessWidget {
+  const LoginForm({
+    super.key,
+    required this.formKey,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    required this.loading,
+    required this.onLogin,
+    required this.onGoogle,
+    required this.onForgotPassword,
+  });
 
-  @override
-  State<LoginForm> createState() => _LoginFormState();
-}
+  final GlobalKey<FormState> formKey;
 
-class _LoginFormState extends State<LoginForm> {
-  final _formKey = GlobalKey<FormState>();
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final bool obscurePassword;
+  final bool loading;
 
-  bool _obscurePassword = true;
+  final VoidCallback onTogglePassword;
+  final VoidCallback onLogin;
+  final VoidCallback onGoogle;
+  final VoidCallback onForgotPassword;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  InputDecoration decoration({
+    required String hint,
+    required IconData icon,
+    Widget? suffix,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(
+        icon,
+        color: AppColors.primary,
+      ),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(16),
+        ),
+        borderSide: BorderSide(
+          color: AppColors.primary,
+          width: 1.5,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: _formKey,
+      key: formKey,
       child: Column(
         children: [
-          //=====================================
-          // Email / Mobile
-          //=====================================
+
+          /// Email
 
           TextFormField(
-            controller: _emailController,
+            controller: emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: "Email / Mobile Number",
-              hintText: "Enter Email or Mobile Number",
-              prefixIcon: Icon(Icons.person_outline),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return "Please enter email";
+              }
+              return null;
+            },
+            decoration: decoration(
+              hint: "Email",
+              icon: Icons.email_outlined,
             ),
           ),
 
           const SizedBox(height: 18),
 
-          //=====================================
-          // Password
-          //=====================================
+          /// Password
 
           TextFormField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            decoration: InputDecoration(
-              labelText: "Password",
-              hintText: "Enter Password",
-              prefixIcon: const Icon(Icons.lock_outline),
+            controller: passwordController,
+            obscureText: obscurePassword,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Please enter password";
+              }
 
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
+              if (value.length < 6) {
+                return "Minimum 6 characters";
+              }
+
+              return null;
+            },
+            decoration: decoration(
+              hint: "Password",
+              icon: Icons.lock_outline,
+              suffix: IconButton(
+                onPressed: onTogglePassword,
                 icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
+                  obscurePassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
-
-          //=====================================
-          // Forgot Password
-          //=====================================
+          const SizedBox(height: 8),
 
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {
-                // TODO
-              },
+              onPressed: onForgotPassword,
               child: const Text(
                 "Forgot Password?",
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
             ),
           ),
 
-          const SizedBox(height: 15),
-
-          //=====================================
-          // Login Button
-          //=====================================
+          const SizedBox(height: 16),
 
           SizedBox(
             width: double.infinity,
-            height: 55,
+            height: 56,
             child: ElevatedButton(
-              onPressed: () {
-                // TODO Login
-              },
-              child: const Text(
-                "LOGIN",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+              onPressed: loading ? null : onLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(16),
                 ),
               ),
+              child: loading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      "Login",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
           ),
 
-          const SizedBox(height: 25),
-
-          //=====================================
-          // OR Divider
-          //=====================================
+          const SizedBox(height: 30),
 
           Row(
             children: [
               const Expanded(child: Divider()),
-
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                ),
                 child: Text(
                   "OR",
                   style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ),
-
               const Expanded(child: Divider()),
             ],
           ),
 
-          const SizedBox(height: 25),
-
-          //=====================================
-          // Google Button
-          //=====================================
+          const SizedBox(height: 30),
 
           SizedBox(
             width: double.infinity,
-            height: 55,
+            height: 56,
             child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO Google Login
-              },
-              icon: const Icon(Icons.g_mobiledata, size: 30),
+              onPressed: loading ? null : onGoogle,
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
+                side: BorderSide(
+                  color: Colors.grey.shade300,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+              ),
+              icon: SvgPicture.asset(
+                "assets/icons/google_logo.svg",
+                width: 22,
+                height: 22,
+              ),
               label: const Text(
                 "Continue with Google",
                 style: TextStyle(
-                  fontSize: 16,
+                  color: Colors.black87,
                   fontWeight: FontWeight.w600,
                 ),
               ),

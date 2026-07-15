@@ -9,82 +9,38 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ==========================
-        // LOGO
-        // ==========================
-
-        Container(
-          width: 170,
-          height: 170,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 18,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Image.asset(
-              "assets/images/app_logo.png",
-              fit: BoxFit.contain,
-            ),
+        Hero(
+          tag: 'hungers_logo',
+          child: Image.asset(
+            'assets/images/app_logo.png',
+            width: 120,
+            height: 120,
+            fit: BoxFit.contain,
           ),
         ),
-
-        const SizedBox(height: 28),
-
-        // ==========================
-        // APP NAME
-        // ==========================
-
+        const SizedBox(height: 24),
         const Text(
-          "HUNGERS",
+          'Welcome Back!',
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-            color: AppColors.secondary,
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        // ==========================
-        // WELCOME
-        // ==========================
-
-        const Text(
-          "Welcome Back 👋",
-          style: TextStyle(
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: AppColors.secondary,
+            letterSpacing: 0.5,
           ),
         ),
-
-        const SizedBox(height: 8),
-
-        // ==========================
-        // TAGLINE
-        // ==========================
-
+        const SizedBox(height: 10),
         const Text(
-          "Feeding Smiles. Happy Hearts.",
+          "Sign in to continue your delicious journey.",
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15,
+            height: 1.5,
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
-
-        const SizedBox(height: 40),
+        const SizedBox(height: 36),
       ],
     );
   }
