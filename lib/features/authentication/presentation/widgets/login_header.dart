@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/tukkito_app_logo.dart';
 
 class LoginHeader extends StatelessWidget {
   const LoginHeader({super.key});
@@ -9,18 +10,13 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Hero(
+        const Hero(
           tag: 'hungers_logo',
-          child: Image.asset(
-            'assets/images/app_logo.png',
-            width: 120,
-            height: 120,
-            fit: BoxFit.contain,
-          ),
+          child: TukkitoAppLogo(size: 120),
         ),
         const SizedBox(height: 24),
         const Text(
-          'Welcome Back!',
+          'Welcome to Tukkito',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 28,
@@ -31,7 +27,7 @@ class LoginHeader extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         const Text(
-          "Sign in to continue your delicious journey.",
+          'Sign in with your mobile number to continue.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15,

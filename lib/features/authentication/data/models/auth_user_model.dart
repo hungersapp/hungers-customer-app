@@ -62,7 +62,7 @@ class AuthUserModel extends AuthUser {
       isAnonymous: isAnonymous,
     );
   }
-
+   @override
   AuthUserModel copyWith({
     String? uid,
     String? name,

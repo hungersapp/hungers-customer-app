@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/tukkito_app_logo.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../core/validators/password_validator.dart';
 
@@ -16,7 +17,6 @@ class RegistrationScreen extends ConsumerStatefulWidget {
 
 class _RegistrationScreenState
     extends ConsumerState<RegistrationScreen> {
-  final _formKey = GlobalKey<FormState>();
 
   final _name = TextEditingController();
   final _email = TextEditingController();
@@ -193,11 +193,7 @@ if (passwordError != null) {
 
                         Hero(
                           tag: 'hungers_logo',
-                          child: Image.asset(
-                            'assets/images/app_logo.png',
-                            width: 90,
-                            height: 90,
-                          ),
+                          child: const TukkitoAppLogo(size: 90),
                         ),
 
                         const SizedBox(height: 20),
@@ -214,7 +210,7 @@ if (passwordError != null) {
                         const SizedBox(height: 8),
 
                         const Text(
-                          'Create your Hungers account and start ordering.',
+                          'Create your Tukkito account and start ordering.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 15,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/tukkito_app_logo.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -91,13 +92,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             icon: const Icon(Icons.arrow_back_ios_new_rounded),
                           ),
                         ),
-                        Hero(
+                        const Hero(
                           tag: 'hungers_logo',
-                          child: Image.asset(
-                            'assets/images/app_logo.png',
-                            width: 90,
-                            height: 90,
-                          ),
+                          child: TukkitoAppLogo(size: 90),
                         ),
                         const SizedBox(height: 24),
                         const Text(

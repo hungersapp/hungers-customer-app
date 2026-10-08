@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/tukkito_app_logo.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -57,15 +58,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Hero(
-  tag: 'hungers_logo',
-  child: Image.asset(
-    'assets/images/app_logo.png',
-    width: 90,
-    height: 90,
-    fit: BoxFit.contain,
-  ),
-),
+                        const Hero(
+                          tag: 'hungers_logo',
+                          child: TukkitoAppLogo(size: 90),
+                        ),
                         const SizedBox(height: 24),
                         const Text(
                           'Forgot Password',

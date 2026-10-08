@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Real Google Maps API key (Secrets Gradle Plugin). Never commit this file —
+# see local.defaults.properties for the checked-in placeholder fallback.
+secrets.properties

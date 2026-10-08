@@ -1,9 +1,33 @@
 import '../entities/auth_user.dart';
+import '../phone_otp_session.dart';
 
 abstract class AuthRepository {
 
   /// Current Logged In User
   Future<AuthUser?> getCurrentUser();
+
+  /// Sends a Firebase Phone Auth OTP. Does not store the OTP.
+  Future<PhoneOtpSession> sendPhoneOtp({
+    required String phoneE164,
+    bool resend = false,
+  });
+
+  /// Completes Phone Auth with the SMS code entered by the customer.
+  Future<AuthUser> verifyPhoneOtp({
+    required String smsCode,
+  });
+
+  /// Existing `users/{uid}` customer profile, if any.
+  Future<AuthUser?> getCustomerProfile(String userId);
+
+  /// Creates the customer profile after the new-user zone gate passes.
+  Future<void> createCustomerProfile(AuthUser user);
+
+  /// Updates `users/{uid}.name` for the authenticated customer.
+  Future<void> updateCustomerProfileName({
+    required String userId,
+    required String name,
+  });
 
   /// Email & Password Login
   Future<AuthUser> login({

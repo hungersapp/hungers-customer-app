@@ -1,100 +1,102 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/sized_network_image.dart';
 import '../../domain/entities/category.dart';
+import 'category_local_image.dart';
 
 class CategorySection extends StatelessWidget {
   const CategorySection({
     super.key,
     required this.categories,
+    this.onCategoryTap,
   });
 
   final List<Category> categories;
 
+  /// Optional override for tests; defaults to [AppRoutes.categoryFoods].
+  final ValueChanged<Category>? onCategoryTap;
+
+  static const double _imageSize = 80;
+
   @override
   Widget build(BuildContext context) {
+    if (categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
             child: Text(
-              'Categories',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              'Food Categories',
+              style: theme.textTheme.headlineMedium,
             ),
           ),
-
-          const SizedBox(height: 14),
-
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
-            height: 100,
+            height: 118,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
               itemCount: categories.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(width: 14),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.lg),
               itemBuilder: (context, index) {
                 final category = categories[index];
 
                 return InkWell(
-                  borderRadius:
-                      BorderRadius.circular(18),
+                  key: Key('home-category-${category.id}'),
+                  borderRadius: BorderRadius.circular(_imageSize / 2),
                   onTap: () {
-                    // TODO:
-                    // Navigate to Category Products
+                    final handler = onCategoryTap;
+                    if (handler != null) {
+                      handler(category);
+                      return;
+                    }
+                    Navigator.of(
+                      context,
+                    ).pushNamed(AppRoutes.categoryFoods, arguments: category);
                   },
                   child: SizedBox(
-                    width: 78,
+                    width: 84,
                     child: Column(
                       children: [
-                        Container(
-                          height: 58,
-                          width: 58,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius:
-                                BorderRadius.circular(18),
+                        DecoratedBox(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.shadow,
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: category.imageUrl.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(
-                                          18),
-                                  child: Image.network(
-                                    category.imageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (_, __, ___) =>
-                                            const Icon(
-                                      Icons.fastfood,
-                                      size: 30,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.fastfood,
-                                  size: 30,
-                                ),
+                          child: _CategoryImage(
+                            name: category.name,
+                            imageUrl: category.imageUrl,
+                            size: _imageSize,
+                          ),
                         ),
-
-                        const SizedBox(height: 8),
-
+                        const SizedBox(height: AppSpacing.sm),
                         Text(
                           category.name,
                           maxLines: 1,
-                          overflow:
-                              TextOverflow.ellipsis,
+                          overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style:
-                              theme.textTheme.bodySmall,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -104,6 +106,62 @@ class CategorySection extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryImage extends StatelessWidget {
+  const _CategoryImage({
+    required this.name,
+    required this.imageUrl,
+    required this.size,
+  });
+
+  final String name;
+  final String imageUrl;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final localAsset = CategoryLocalImage.assetForName(name);
+    final remoteUrl = imageUrl.trim();
+
+    Widget fallback() {
+      if (localAsset != null) {
+        return Image.asset(
+          localAsset,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (_, _, _) => _fallbackIcon(size),
+        );
+      }
+      return _fallbackIcon(size);
+    }
+
+    final image = remoteUrl.isNotEmpty
+        ? SizedNetworkImage(
+            url: remoteUrl,
+            fit: BoxFit.cover,
+            width: size,
+            height: size,
+            error: fallback(),
+          )
+        : fallback();
+
+    return ClipOval(
+      child: SizedBox(width: size, height: size, child: image),
+    );
+  }
+
+  static Widget _fallbackIcon(double size) {
+    return ColoredBox(
+      color: AppColors.surface,
+      child: Icon(
+        Icons.fastfood_rounded,
+        size: size * 0.38,
+        color: AppColors.primary,
       ),
     );
   }

@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -7,81 +6,71 @@ class LoginFooter extends StatelessWidget {
   const LoginFooter({
     super.key,
     required this.onCreateAccount,
-    required this.onTerms,
-    required this.onPrivacy,
+    this.loading = false,
   });
 
   final VoidCallback onCreateAccount;
-  final VoidCallback onTerms;
-  final VoidCallback onPrivacy;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-            ),
-            children: [
-              const TextSpan(text: "Don't have an account? "),
-              TextSpan(
-                text: 'Create Account',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = onCreateAccount,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.6,
-            ),
-            children: [
-              const TextSpan(
-                text: 'By continuing, you agree to our ',
-              ),
-              TextSpan(
-                text: 'Terms & Conditions',
-                style: const TextStyle(
-                  color: AppColors.primary,
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.grey.shade300)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'or',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
                   fontWeight: FontWeight.w600,
                 ),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = onTerms,
               ),
-              const TextSpan(text: ' and '),
-              TextSpan(
-                text: 'Privacy Policy',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = onPrivacy,
-              ),
-              const TextSpan(text: '.'),
-            ],
-          ),
+            ),
+            Expanded(child: Divider(color: Colors.grey.shade300)),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
         const Text(
-          '© 2026 Hungers. All rights reserved.',
+          'New Customer?',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.secondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Create your account with mobile OTP. We will check Tukkito availability in your area.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.45,
             color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: OutlinedButton(
+            onPressed: loading ? null : onCreateAccount,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Create Account',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
           ),
         ),
       ],

@@ -47,11 +47,27 @@ dependencies:
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.0
   cloud_firestore: ^6.0.0
+  cloud_functions: ^6.0.0
   google_sign_in: ^7.1.0
+
+  shimmer: ^3.0.0
+
+  equatable: ^2.0.7
+
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  google_fonts: ^8.2.1
+  google_maps_flutter: ^2.10.0
+  wakelock_plus: ^1.8.0
+  url_launcher: ^6.3.1
+  flutter_cashfree_pg_sdk: ^2.4.0+52
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  google_maps_flutter_platform_interface: ^2.16.1
+  plugin_platform_interface: ^2.1.8
+  url_launcher_platform_interface: ^2.3.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -59,6 +75,18 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  wakelock_plus_platform_interface: ^1.7.0
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/images/tukkito_mark.png
+  adaptive_icon_background: "#E23744"
+  adaptive_icon_foreground: assets/images/tukkito_mark.png
+  # 30% inset made the mark look tiny inside the adaptive safe zone.
+  # 16% keeps launcher compatibility without excessive padding.
+  adaptive_icon_foreground_inset: 16
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -74,6 +102,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/categories/
     - assets/icons/
     - assets/animations/
 

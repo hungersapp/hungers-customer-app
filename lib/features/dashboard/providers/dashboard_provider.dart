@@ -6,32 +6,23 @@ import '../domain/entities/category.dart';
 import '../domain/usecases/get_categories_usecase.dart';
 
 /// Datasource
-final dashboardDatasourceProvider =
-    Provider<DashboardDatasource>(
+final dashboardDatasourceProvider = Provider<DashboardDatasource>(
   (ref) => DashboardDatasource(),
 );
 
 /// Repository
-final dashboardRepositoryProvider =
-    Provider<DashboardRepositoryImpl>(
-  (ref) => DashboardRepositoryImpl(
-    ref.read(dashboardDatasourceProvider),
-  ),
+final dashboardRepositoryProvider = Provider<DashboardRepositoryImpl>(
+  (ref) => DashboardRepositoryImpl(ref.read(dashboardDatasourceProvider)),
 );
 
 /// UseCase
-final getCategoriesUseCaseProvider =
-    Provider<GetCategoriesUseCase>(
-  (ref) => GetCategoriesUseCase(
-    ref.read(dashboardRepositoryProvider),
-  ),
+final getCategoriesUseCaseProvider = Provider<GetCategoriesUseCase>(
+  (ref) => GetCategoriesUseCase(ref.read(dashboardRepositoryProvider)),
 );
 
 /// Dashboard Notifier
-class DashboardNotifier
-    extends StateNotifier<AsyncValue<List<Category>>> {
-  DashboardNotifier(this._ref)
-      : super(const AsyncValue.loading());
+class DashboardNotifier extends StateNotifier<AsyncValue<List<Category>>> {
+  DashboardNotifier(this._ref) : super(const AsyncValue.loading());
 
   final Ref _ref;
 
@@ -45,8 +36,7 @@ class DashboardNotifier
 }
 
 /// Dashboard Provider
-final dashboardProvider = StateNotifierProvider<
-    DashboardNotifier,
-    AsyncValue<List<Category>>>(
-  (ref) => DashboardNotifier(ref),
-);
+final dashboardProvider =
+    StateNotifierProvider<DashboardNotifier, AsyncValue<List<Category>>>(
+      (ref) => DashboardNotifier(ref),
+    );

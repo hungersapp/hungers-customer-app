@@ -1,170 +1,220 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../authentication/domain/session_route.dart';
+import '../../authentication/providers/auth_provider.dart';
+import '../../cart/domain/cart_clear_policy.dart';
+import '../../location/presentation/providers/location_provider.dart';
+import '../../serviceability/presentation/providers/destination_serviceability_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final AnimationController _floatController;
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  /// How long the brand splash is shown at the least.
+  static const Duration _minimumSplash = Duration(seconds: 3);
 
-  late final Animation<double> _logoOpacity;
-  late final Animation<double> _logoScale;
-  late final Animation<double> _titleOpacity;
-  late final Animation<double> _taglineOpacity;
-  late final Animation<double> _loadingOpacity;
-  late final Animation<Offset> _floatAnimation;
+  /// The longest the splash waits for the location to be initialised (the GPS
+  /// read itself gives up after 30 s). Past it, Home opens and reports the
+  /// location status instead of the customer staring at the splash.
+  static const Duration _locationStartupLimit = Duration(seconds: 40);
+
+  bool _showGetStarted = false;
+  bool _didNavigate = false;
+
+  /// True while the startup location flow is running past the brand splash.
+  bool _findingLocation = false;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2600),
-    );
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _logoOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.30, curve: Curves.easeIn),
-    );
-
-    _logoScale = Tween(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOutBack),
-      ),
-    );
-
-    _titleOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.35, 0.55, curve: Curves.easeIn),
-    );
-
-    _taglineOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.55, 0.75, curve: Curves.easeIn),
-    );
-
-    _loadingOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.75, 1.0, curve: Curves.easeIn),
-    );
-
-    _floatAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.015),
-      end: const Offset(0, -0.015),
-    ).animate(CurvedAnimation(parent: _floatController, curve: Curves.easeInOut));
-
-    _controller.forward();
     _initializeApp();
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(const Duration(seconds: 3));
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    // The brand splash and the startup work run side by side, so location
+    // initialisation does not add to the splash unless it really takes longer.
+    final minimumSplash = Future<void>.delayed(_minimumSplash);
+    if (kIsWeb) {
+      // On web the signed-in session is restored asynchronously; the splash
+      // delay has always been what gives it time, so keep that order there.
+      await minimumSplash;
+      if (!mounted) {
+        return;
+      }
+    }
+
+    await const CartStartupHandler().onAppStart();
+    await ref.read(authProvider.notifier).loadCurrentUser();
+    if (!mounted) {
+      return;
+    }
+
+    final sessionUser = ref.read(authProvider).valueOrNull;
+    var hasProfile = false;
+    if (sessionUser != null) {
+      final profile = await ref
+          .read(authProvider.notifier)
+          .loadCustomerProfile(sessionUser.uid);
+      hasProfile = profile != null;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    final destination = switch (resolveSessionRoute(
+      isAuthenticated: sessionUser != null,
+      hasCustomerProfile: hasProfile,
+    )) {
+      SessionRoute.login => AppRoutes.login,
+      SessionRoute.dashboard => AppRoutes.dashboard,
+      SessionRoute.zoneRegistration => AppRoutes.zoneRegistration,
+    };
+
+    if (destination == AppRoutes.dashboard && sessionUser != null) {
+      // Home must open with the right location already in place — never an
+      // old address that changes a few seconds later.
+      var locationReady = false;
+      final location = _initializeLocation(
+        sessionUser.uid,
+      ).whenComplete(() => locationReady = true);
+      await minimumSplash;
+      if (mounted && !locationReady) {
+        setState(() => _findingLocation = true);
+      }
+      await location;
+    } else {
+      await minimumSplash;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    if (destination == AppRoutes.login) {
+      setState(() {
+        _showGetStarted = true;
+      });
+      return;
+    }
+
+    _goTo(destination);
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _floatController.dispose();
-    super.dispose();
+  /// The ONE startup location flow: permission → GPS → address → active
+  /// location (as LocationRefreshPolicy allows) → serviceability for it.
+  /// The Home screen, serviceability and restaurant discovery then reuse the
+  /// same provider state instead of starting their own read.
+  ///
+  /// Never throws and never blocks past [_locationStartupLimit]: when GPS is
+  /// refused or unavailable the active location is left as it was and Home
+  /// shows the location status.
+  Future<void> _initializeLocation(String userId) async {
+    try {
+      await ref
+          .read(locationSetupProvider.notifier)
+          .initializeForStartup(userId)
+          .timeout(_locationStartupLimit);
+      await ref
+          .read(destinationServiceabilityProvider.future)
+          .timeout(_locationStartupLimit);
+    } catch (_) {
+      // Slow or failed: Home handles it (status banner / location selector).
+    }
+  }
+
+  void _onGetStarted() {
+    _goTo(AppRoutes.login);
+  }
+
+  void _goTo(String route) {
+    if (!mounted || _didNavigate) {
+      return;
+    }
+    _didNavigate = true;
+    Navigator.pushReplacementNamed(context, route);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF6EE), Colors.white],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FadeTransition(
-                    opacity: _logoOpacity,
-                    child: ScaleTransition(
-                      scale: _logoScale,
-                      child: SlideTransition(
-                        position: _floatAnimation,
-                        child: Stack(
+    final size = MediaQuery.sizeOf(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    // Keep aspect via BoxFit.contain; size tuned so the mark reads clearly
+    // on common phone widths without crowding the title/tagline.
+    final markSize = (size.shortestSide * 0.46).clamp(156.0, 228.0);
+    final titleSize = textScaler.scale(40).clamp(32.0, 44.0);
+    final taglineSize = textScaler.scale(16).clamp(14.0, 18.0);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: AppColors.primary,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.primary,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/tukkito_mark.png',
+                          width: markSize,
+                          height: markSize,
+                          fit: BoxFit.contain,
                           alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 220,
-                              height: 220,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.primary.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            Image.asset(
-                              'assets/images/app_logo.png',
-                              width: 210,
-                              height: 210,
-                            ),
-                          ],
                         ),
-                      ),
+                        const SizedBox(height: 28),
+                        Text(
+                          'Tukkito',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Your Food. Your Choice.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: taglineSize,
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                        ),
+                        if (_findingLocation) ...[
+                          const SizedBox(height: 28),
+                          const _FindingLocation(),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 28),
-                  FadeTransition(
-                    opacity: _titleOpacity,
-                    child: const Text(
-                      'HUNGERS',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 2,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FadeTransition(
-                    opacity: _taglineOpacity,
-                    child: const Text(
-                      'Feeding Smiles.\nHappy Hearts.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 17,
-                        height: 1.5,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-                  FadeTransition(
-                    opacity: _loadingOpacity,
-                    child: const _LoadingText(),
-                  ),
-                ],
-              ),
+                ),
+                if (_showGetStarted)
+                  _GetStartedButton(onPressed: _onGetStarted),
+                if (_showGetStarted) const SizedBox(height: 28),
+              ],
             ),
           ),
         ),
@@ -173,36 +223,68 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class _LoadingText extends StatefulWidget {
-  const _LoadingText();
-
-  @override
-  State<_LoadingText> createState() => _LoadingTextState();
-}
-
-class _LoadingTextState extends State<_LoadingText> {
-  int dots = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.doWhile(() async {
-      if (!mounted) return false;
-      await Future.delayed(const Duration(milliseconds: 450));
-      if (!mounted) return false;
-      setState(() => dots = dots % 3 + 1);
-      return true;
-    });
-  }
+/// Shown when the location is still being worked out after the brand splash:
+/// the customer waits here rather than seeing a wrong location on Home.
+class _FindingLocation extends StatelessWidget {
+  const _FindingLocation();
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Preparing Happiness${'.' * dots}',
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.textLight,
+          ),
+        ),
+        SizedBox(width: 12),
+        Text(
+          'Finding your location…',
+          style: TextStyle(
+            color: AppColors.textLight,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GetStartedButton extends StatelessWidget {
+  const _GetStartedButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.secondary,
+              disabledBackgroundColor: AppColors.surface,
+              elevation: 0,
+              minimumSize: const Size(0, 56),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: const StadiumBorder(),
+            ),
+            child: const Text(
+              'Get Started  →',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
       ),
     );
   }

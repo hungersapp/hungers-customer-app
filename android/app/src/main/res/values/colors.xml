@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand primary (Zomato-style red). Resource id kept for existing style refs. -->
+    <color name="tukkito_orange">#E23744</color>
+    <color name="ic_launcher_background">#E23744</color>
+</resources>
